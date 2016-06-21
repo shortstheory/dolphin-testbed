@@ -737,6 +737,9 @@ private:
      */
     QList<QUrl> simplifiedSelectedUrls() const;
 
+    void give2kded();
+    void displaySelectedUrls();
+
     /**
      * Returns the MIME data for all selected items.
      */

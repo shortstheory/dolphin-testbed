@@ -20,6 +20,7 @@
 #include "dolphinviewcontainer.h"
 #include <KProtocolManager>
 
+#include <QDebug>
 #include <QDropEvent>
 #include <QTimer>
 #include <QMimeData>
@@ -578,6 +579,7 @@ void DolphinViewContainer::slotUrlNavigatorLocationChanged(const QUrl& url)
             // a new view widget.
             QTimer::singleShot(0, this, &DolphinViewContainer::requestFocus);
         }
+        qDebug() << "Supported " << url;
     } else if (KProtocolManager::isSourceProtocol(url)) {
         QString app = QStringLiteral("konqueror");
         if (url.scheme().startsWith(QLatin1String("http"))) {
@@ -598,6 +600,7 @@ void DolphinViewContainer::slotUrlNavigatorLocationChanged(const QUrl& url)
             showMessage(i18nc("@info:status",
                               "Protocol not supported by Dolphin, Konqueror has been launched"),
                         Information);
+            qDebug() << "Not supported " << url;    
         }
 
         const QString secureUrl = KShell::quoteArg(url.toDisplayString(QUrl::PreferLocalFile));

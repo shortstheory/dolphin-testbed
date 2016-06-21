@@ -32,6 +32,9 @@
 #include <QPointer>
 #include <QMenu>
 #include <QVBoxLayout>
+#include <QDBusMessage>
+#include <QDBusConnection>
+#include <QDBusReply>
 #include <KDesktopFile>
 #include <KProtocolManager>
 #include <KColorScheme>
@@ -666,9 +669,19 @@ void DolphinView::renameSelectedItems()
     m_assureVisibleCurrentIndex = true;
 }
 
+void DolphinView::displaySelectedUrls()
+{
+    auto list = simplifiedSelectedUrls();
+    for (auto it = list.begin(); it != list.end(); it++) {
+        qDebug() << it->path();
+    }
+}
+
 void DolphinView::trashSelectedItems()
 {
     const QList<QUrl> list = simplifiedSelectedUrls();
+    qDebug() << "SELECTED ITEMS DELETED2TRASH";
+    displaySelectedUrls();
     KIO::JobUiDelegate uiDelegate;
     uiDelegate.setWindow(window());
     if (uiDelegate.askDeleteConfirmation(list, KIO::JobUiDelegate::Trash, KIO::JobUiDelegate::DefaultConfirmation)) {
@@ -683,7 +696,8 @@ void DolphinView::trashSelectedItems()
 void DolphinView::deleteSelectedItems()
 {
     const QList<QUrl> list = simplifiedSelectedUrls();
-
+    qDebug() << "SELECTED ITEMS DELETED";
+    displaySelectedUrls();
     KIO::JobUiDelegate uiDelegate;
     uiDelegate.setWindow(window());
     if (uiDelegate.askDeleteConfirmation(list, KIO::JobUiDelegate::Delete, KIO::JobUiDelegate::DefaultConfirmation)) {
@@ -699,12 +713,16 @@ void DolphinView::cutSelectedItems()
     QMimeData* mimeData = selectionMimeData();
     KIO::setClipboardDataCut(mimeData, true);
     QApplication::clipboard()->setMimeData(mimeData);
+    qDebug() << "cut";
+    displaySelectedUrls();
 }
 
 void DolphinView::copySelectedItems()
 {
     QMimeData* mimeData = selectionMimeData();
     QApplication::clipboard()->setMimeData(mimeData);
+    qDebug() << "copy";
+    displaySelectedUrls();
 }
 
 void DolphinView::paste()
@@ -715,6 +733,8 @@ void DolphinView::paste()
 void DolphinView::pasteIntoFolder()
 {
     const KFileItemList items = selectedItems();
+    qDebug() << "PASTE2FOLDER";
+    displaySelectedUrls();
     if ((items.count() == 1) && items.first().isDir()) {
         pasteToUrl(items.first().url());
     }
@@ -1044,7 +1064,7 @@ void DolphinView::slotItemDropEvent(int index, QGraphicsSceneDragDropEvent* even
     setActive(true);
 }
 
-void DolphinView::dropUrls(const QUrl &destUrl, QDropEvent *dropEvent)
+void DolphinView::dropUrls(const QUrl &destUrl, QDropEvent *dropEvent) //HACK THIS
 {
     KIO::DropJob* job = DragAndDropHelper::dropUrls(destUrl, dropEvent, this);
 
@@ -1662,12 +1682,24 @@ void DolphinView::applyModeToView()
 
 void DolphinView::pasteToUrl(const QUrl& url)
 {
-    KIO::PasteJob *job = KIO::paste(QApplication::clipboard()->mimeData(), url);
-    KJobWidgets::setWindow(job, this);
-    m_clearSelectionBeforeSelectingNewItems = true;
-    m_markFirstNewlySelectedItemAsCurrent = true;
-    connect(job, &KIO::PasteJob::itemCreated, this, &DolphinView::slotItemCreated);
-    connect(job, &KIO::PasteJob::result, this, &DolphinView::slotPasteJobResult);
+    if (DolphinView::url() != QUrl("stash:")) {
+        qDebug() << "NORMAL PASTE JOB";
+        KIO::PasteJob *job = KIO::paste(QApplication::clipboard()->mimeData(), url);
+        KJobWidgets::setWindow(job, this);
+        m_clearSelectionBeforeSelectingNewItems = true;
+        m_markFirstNewlySelectedItemAsCurrent = true;
+        connect(job, &KIO::PasteJob::itemCreated, this, &DolphinView::slotItemCreated);
+        connect(job, &KIO::PasteJob::result, this, &DolphinView::slotPasteJobResult);
+    } else {
+        qDebug() << "STASH MODE ACTIVATED";
+        QList<QUrl> listOfUrl = QApplication::clipboard()->mimeData()->urls();
+        for (auto it = listOfUrl.begin(); it != listOfUrl.end(); it++) {
+            qDebug() << it->path();
+            QDBusMessage m = QDBusMessage::createMethodCall("org.kde.StagingNotifier", "/StagingNotifier","","watchDir");
+            m << it->path();
+            bool queued = QDBusConnection::sessionBus().send(m);
+        }
+    }
 }
 
 QList<QUrl> DolphinView::simplifiedSelectedUrls() const
@@ -1686,6 +1718,18 @@ QList<QUrl> DolphinView::simplifiedSelectedUrls() const
     }
 
     return urls;
+}
+
+void DolphinView::give2kded()
+{
+    QList<QUrl> input = simplifiedSelectedUrls();
+    QDBusMessage m;
+    for (auto it = input.begin(); it != input.end(); it++) {
+        m = QDBusMessage::createMethodCall("org.kde.StagingNotifier", "/StagingNotifier","","watchDir");
+        m << it->path();
+        qDebug() << "kded picked up" << it->path();
+        bool queued = QDBusConnection::sessionBus().send(m);
+    }
 }
 
 QMimeData* DolphinView::selectionMimeData() const
