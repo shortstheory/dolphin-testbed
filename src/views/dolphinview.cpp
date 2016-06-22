@@ -24,6 +24,7 @@
 
 #include <QAbstractItemView>
 #include <QApplication>
+#include <QDebug>
 #include <QClipboard>
 #include <QDropEvent>
 #include <QGraphicsSceneDragDropEvent>
@@ -59,6 +60,7 @@
 #include <KJob>
 #include <KMessageBox>
 #include <KJobWidgets>
+#include <KUrlMimeData>
 #include <QUrl>
 
 #include "dolphinnewfilemenuobserver.h"
@@ -1066,16 +1068,30 @@ void DolphinView::slotItemDropEvent(int index, QGraphicsSceneDragDropEvent* even
 
 void DolphinView::dropUrls(const QUrl &destUrl, QDropEvent *dropEvent) //HACK THIS
 {
-    KIO::DropJob* job = DragAndDropHelper::dropUrls(destUrl, dropEvent, this);
+    qDebug() << "DRAG N' DROP CAllED";
+    //displaySelectedUrls();
+    if (url() == QUrl("stash:")) {
+        qDebug() << "DROP STASH EVENT";
+        const QMimeData *m_mimeData(dropEvent->mimeData());
+        QList<QUrl> listOfUrl(KUrlMimeData::urlsFromMimeData(m_mimeData, KUrlMimeData::PreferLocalUrls)); //= QApplication::clipboard()->mimeData()->urls();
+        for (auto it = listOfUrl.begin(); it != listOfUrl.end(); it++) {
+            qDebug() << it->path();
+            QDBusMessage m = QDBusMessage::createMethodCall("org.kde.StagingNotifier", "/StagingNotifier","","watchDir");
+            m << it->path();
+            bool queued = QDBusConnection::sessionBus().send(m);
+        }
+    } else {
+        KIO::DropJob* job = DragAndDropHelper::dropUrls(destUrl, dropEvent, this);
 
-    if (job) {
-        connect(job, &KIO::DropJob::result, this, &DolphinView::slotPasteJobResult);
+        if (job) {
+            connect(job, &KIO::DropJob::result, this, &DolphinView::slotPasteJobResult);
 
-        if (destUrl == url()) {
-            // Mark the dropped urls as selected.
-            m_clearSelectionBeforeSelectingNewItems = true;
-            m_markFirstNewlySelectedItemAsCurrent = true;
-            connect(job, &KIO::DropJob::itemCreated, this, &DolphinView::slotItemCreated);
+            if (destUrl == url()) {
+                // Mark the dropped urls as selected.
+                m_clearSelectionBeforeSelectingNewItems = true;
+                m_markFirstNewlySelectedItemAsCurrent = true;
+                connect(job, &KIO::DropJob::itemCreated, this, &DolphinView::slotItemCreated);
+            }
         }
     }
 }
