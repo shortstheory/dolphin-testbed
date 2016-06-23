@@ -200,7 +200,7 @@ DolphinView::DolphinView(const QUrl& url, QWidget* parent) :
 
     applyViewProperties();
     m_topLayout->addWidget(m_container);
-    bool success  = QDBusConnection::sessionBus().connect("org.kde.StagingNotifier", "/StagingNotifier","","listChanged", this, SLOT(kdedchanged()));
+    bool success  = QDBusConnection::sessionBus().connect("org.kde.kio.StashNotifier", "/StashNotifier","","listChanged", this, SLOT(kdedchanged()));
     qDebug() << "STATUS OF CONNECTION" << success;
     loadDirectory(url);
 }
@@ -1079,7 +1079,7 @@ void DolphinView::dropUrls(const QUrl &destUrl, QDropEvent *dropEvent) //HACK TH
         QList<QUrl> listOfUrl(KUrlMimeData::urlsFromMimeData(m_mimeData, KUrlMimeData::PreferLocalUrls)); //= QApplication::clipboard()->mimeData()->urls();
         for (auto it = listOfUrl.begin(); it != listOfUrl.end(); it++) {
             qDebug() << it->path();
-            QDBusMessage m = QDBusMessage::createMethodCall("org.kde.StagingNotifier", "/StagingNotifier","","watchDir");
+            QDBusMessage m = QDBusMessage::createMethodCall("org.kde.kio.StashNotifier", "/StashNotifier","","watchDir");
             m << it->path();
             bool queued = QDBusConnection::sessionBus().send(m);
         }
@@ -1714,7 +1714,7 @@ void DolphinView::pasteToUrl(const QUrl& url)
         QList<QUrl> listOfUrl = QApplication::clipboard()->mimeData()->urls();
         for (auto it = listOfUrl.begin(); it != listOfUrl.end(); it++) {
             qDebug() << it->path();
-            QDBusMessage m = QDBusMessage::createMethodCall("org.kde.StagingNotifier", "/StagingNotifier","","watchDir");
+            QDBusMessage m = QDBusMessage::createMethodCall("org.kde.kio.StashNotifier", "/StashNotifier","","watchDir");
             m << it->path();
             bool queued = QDBusConnection::sessionBus().send(m);
         }
@@ -1744,7 +1744,7 @@ void DolphinView::give2kded()
     QList<QUrl> input = simplifiedSelectedUrls();
     QDBusMessage m;
     for (auto it = input.begin(); it != input.end(); it++) {
-        m = QDBusMessage::createMethodCall("org.kde.StagingNotifier", "/StagingNotifier","","watchDir");
+        m = QDBusMessage::createMethodCall("org.kde.kio.StashNotifier", "/StashNotifier","","watchDir");
         m << it->path();
         qDebug() << "kded picked up" << it->path();
         bool queued = QDBusConnection::sessionBus().send(m);
