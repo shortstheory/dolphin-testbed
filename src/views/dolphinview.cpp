@@ -35,6 +35,7 @@
 #include <QVBoxLayout>
 #include <QDBusMessage>
 #include <QDBusConnection>
+#include <QDBusInterface>
 #include <QDBusReply>
 #include <KDesktopFile>
 #include <KProtocolManager>
@@ -199,7 +200,8 @@ DolphinView::DolphinView(const QUrl& url, QWidget* parent) :
 
     applyViewProperties();
     m_topLayout->addWidget(m_container);
-
+    bool success  = QDBusConnection::sessionBus().connect("org.kde.StagingNotifier", "/StagingNotifier","","listChanged", this, SLOT(kdedchanged()));
+    qDebug() << "STATUS OF CONNECTION" << success;
     loadDirectory(url);
 }
 
@@ -681,29 +683,19 @@ void DolphinView::displaySelectedUrls()
 
 void DolphinView::trashSelectedItems()
 {
-    if (url() != QUrl("stash:")) {
-        const QList<QUrl> list = simplifiedSelectedUrls();
-        qDebug() << "SELECTED ITEMS DELETED2TRASH";
-        displaySelectedUrls();
-        KIO::JobUiDelegate uiDelegate;
-        uiDelegate.setWindow(window());
-        if (uiDelegate.askDeleteConfirmation(list, KIO::JobUiDelegate::Trash, KIO::JobUiDelegate::DefaultConfirmation)) {
-            KIO::Job* job = KIO::trash(list);
-            KIO::FileUndoManager::self()->recordJob(KIO::FileUndoManager::Trash, list, QUrl(QStringLiteral("trash:/")), job);
-            KJobWidgets::setWindow(job, this);
-            connect(job, &KIO::Job::result,
-                    this, &DolphinView::slotTrashFileFinished);
-            } else {
-                qDebug() << "STASH MODE ACTIVATED4DELETE";
-            /*    QList<QUrl> listOfUrl = QApplication::clipboard()->mimeData()->urls();
-                for (auto it = listOfUrl.begin(); it != listOfUrl.end(); it++) {
-                    qDebug() << it->path();
-                    QDBusMessage m = QDBusMessage::createMethodCall("org.kde.StagingNotifier", "/StagingNotifier","","removeDir");
-                    m << it->path();
-                    bool queued = QDBusConnection::sessionBus().send(m);
-                }*/
-            }
+    const QList<QUrl> list = simplifiedSelectedUrls();
+    qDebug() << "SELECTED ITEMS DELETED2TRASH" << url();
+    displaySelectedUrls();
+    KIO::JobUiDelegate uiDelegate;
+    uiDelegate.setWindow(window());
+    if (uiDelegate.askDeleteConfirmation(list, KIO::JobUiDelegate::Trash, KIO::JobUiDelegate::DefaultConfirmation)) {
+        KIO::Job* job = KIO::trash(list);
+        KIO::FileUndoManager::self()->recordJob(KIO::FileUndoManager::Trash, list, QUrl(QStringLiteral("trash:/")), job);
+        KJobWidgets::setWindow(job, this);
+        connect(job, &KIO::Job::result,
+                this, &DolphinView::slotTrashFileFinished);
     }
+    reload();
 }
 
 void DolphinView::deleteSelectedItems()

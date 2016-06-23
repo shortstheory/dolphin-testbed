@@ -32,6 +32,7 @@
 #include <QUrl>
 #include <QMimeData>
 #include <QWidget>
+#include <QDebug>
 
 typedef KIO::FileUndoManager::CommandType CommandType;
 class QVBoxLayout;
@@ -306,6 +307,11 @@ public:
     static QUrl openItemAsFolderUrl(const KFileItem& item, const bool browseThroughArchives = true);
 
 public slots:
+    void kdedchanged()
+    {
+        qDebug() << "LIST CHANGED";
+        reload();
+    }
     /**
      * Changes the directory to \a url. If the current directory is equal to
      * \a url, nothing will be done (use DolphinView::reload() instead).
