@@ -1677,6 +1677,9 @@ void DolphinView::applyModeToView()
 
 void DolphinView::pasteToUrl(const QUrl& url)
 {
+    if (url.scheme() == "stash") {
+        qDebug() << "pasting to stash";
+    }
     KIO::PasteJob *job = KIO::paste(QApplication::clipboard()->mimeData(), url);
     KJobWidgets::setWindow(job, this);
     m_clearSelectionBeforeSelectingNewItems = true;
