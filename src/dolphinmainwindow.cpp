@@ -194,7 +194,7 @@ void DolphinMainWindow::showCommand(CommandType command)
         statusBar->setText(i18nc("@info:status", "Successfully linked."));
         break;
     case KIO::FileUndoManager::Trash:
-        statusBar->setText(i18nc("@info:status", "Successfully moved to trash."));
+        statusBar->setText(i18nc("@info:status", "Successfully trashed."));
         break;
     case KIO::FileUndoManager::Rename:
         statusBar->setText(i18nc("@info:status", "Successfully renamed."));
@@ -1510,4 +1510,3 @@ void DolphinMainWindow::UndoUiInterface::jobError(KIO::Job* job)
         KIO::FileUndoManager::UiInterface::jobError(job);
     }
 }
-

@@ -53,6 +53,7 @@
 #include <KIO/DropJob>
 #include <KIO/PasteJob>
 #include <KIO/Paste>
+#include <KUrlMimeData>
 #include <KJob>
 #include <KMessageBox>
 #include <KJobWidgets>
@@ -1044,18 +1045,32 @@ void DolphinView::slotItemDropEvent(int index, QGraphicsSceneDragDropEvent* even
     setActive(true);
 }
 
-void DolphinView::dropUrls(const QUrl &destUrl, QDropEvent *dropEvent)
+void DolphinView::dropUrls(const QUrl &destUrl, QDropEvent *dropEvent) //hack this for the stash:/ dir
 {
-    KIO::DropJob* job = DragAndDropHelper::dropUrls(destUrl, dropEvent, this);
-
-    if (job) {
-        connect(job, &KIO::DropJob::result, this, &DolphinView::slotPasteJobResult);
-
-        if (destUrl == url()) {
-            // Mark the dropped urls as selected.
-            m_clearSelectionBeforeSelectingNewItems = true;
+    qDebug() << "Drop at URL:" << destUrl.scheme();
+    if (destUrl.scheme() == "stash") {
+        qDebug() << "dropping@stash";
+        const QMimeData *m_mimeData(dropEvent->mimeData());
+        QList<QUrl> droppedUrls(KUrlMimeData::urlsFromMimeData(m_mimeData, KUrlMimeData::PreferLocalUrls));
+        KIO::CopyJob *job = 0;
+        job = KIO::copy(droppedUrls, destUrl);
+        if (job) {
+            KIO::FileUndoManager::self()->recordCopyJob(job);
             m_markFirstNewlySelectedItemAsCurrent = true;
-            connect(job, &KIO::DropJob::itemCreated, this, &DolphinView::slotItemCreated);
+            connect(job, &KIO::CopyJob::result, this, &DolphinView::slotPasteJobResult);
+        }
+    } else {
+        KIO::DropJob* job = DragAndDropHelper::dropUrls(destUrl, dropEvent, this);
+
+        if (job) {
+            connect(job, &KIO::DropJob::result, this, &DolphinView::slotPasteJobResult);
+
+            if (destUrl == url()) {
+                // Mark the dropped urls as selected.
+                m_clearSelectionBeforeSelectingNewItems = true;
+                m_markFirstNewlySelectedItemAsCurrent = true;
+                connect(job, &KIO::DropJob::itemCreated, this, &DolphinView::slotItemCreated);
+            }
         }
     }
 }
@@ -1384,7 +1399,7 @@ void DolphinView::calculateItemCount(int& fileCount,
 void DolphinView::slotTrashFileFinished(KJob* job)
 {
     if (job->error() == 0) {
-        emit operationCompletedMessage(i18nc("@info:status", "Trash operation completed."));
+        emit operationCompletedMessage(i18nc("@info:status", "Trashing operation completed."));
     } else if (job->error() != KIO::ERR_USER_CANCELED) {
         emit errorMessage(job->errorString());
     }
