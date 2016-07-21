@@ -47,6 +47,7 @@
             <Action name="open_terminal" />
             <Action name="compare_files" />
             <Action name="change_remote_encoding" />
+            <Action name="show_stash" />
         </Menu>
     </MenuBar>
     <State name="new_file" >

@@ -965,6 +965,12 @@ void DolphinMainWindow::setUrlAsCaption(const QUrl& url)
     setWindowTitle(caption);
 }
 
+void DolphinMainWindow::splitShowStash()
+{
+    DolphinTabPage* tabPage = m_tabWidget->currentTabPage();
+    tabPage->setStash();
+}
+
 void DolphinMainWindow::setupActions()
 {
     // setup 'File' menu
@@ -1103,6 +1109,11 @@ void DolphinMainWindow::setupActions()
     openTerminal->setIcon(QIcon::fromTheme(QStringLiteral("utilities-terminal")));
     actionCollection()->setDefaultShortcut(openTerminal, Qt::SHIFT | Qt::Key_F4);
     connect(openTerminal, &QAction::triggered, this, &DolphinMainWindow::openTerminal);
+
+    QAction* showStash = actionCollection()->addAction(QStringLiteral("show_stash"));
+    showStash->setText(i18nc("@action:inmenu Tools", "Show Stash (virtual file system)"));
+    actionCollection()->setDefaultShortcut(showStash, Qt::CTRL | Qt::Key_B);
+    connect(showStash, &QAction::triggered, this, &DolphinMainWindow::splitShowStash);
 
     // setup 'Settings' menu
     KToggleAction* showMenuBar = KStandardAction::showMenubar(0, 0, actionCollection());

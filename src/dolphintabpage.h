@@ -52,6 +52,8 @@ public:
      */
     void setSplitViewEnabled(bool enabled);
 
+    void setStash();
+
     /**
      * @return The primary view containter.
      */

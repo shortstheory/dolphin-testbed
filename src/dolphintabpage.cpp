@@ -101,6 +101,19 @@ void DolphinTabPage::setSplitViewEnabled(bool enabled)
     }
 }
 
+void DolphinTabPage::setStash()
+{
+    const QUrl& url = QUrl("stash:/");
+    m_secondaryViewContainer = createViewContainer(url);
+
+    const bool placesSelectorVisible = m_primaryViewContainer->urlNavigator()->isPlacesSelectorVisible();
+    m_secondaryViewContainer->urlNavigator()->setPlacesSelectorVisible(placesSelectorVisible);
+
+    m_splitter->addWidget(m_secondaryViewContainer);
+    m_secondaryViewContainer->show();
+    m_secondaryViewContainer->setActive(true);
+}
+
 DolphinViewContainer* DolphinTabPage::primaryViewContainer() const
 {
     return m_primaryViewContainer;

@@ -235,6 +235,8 @@ private slots:
 
     void showFilterBar();
 
+    void splitShowStash();
+
     /**
      * Toggles between edit and browse mode of the navigation bar.
      */
@@ -514,4 +516,3 @@ inline int DolphinMainWindow::getId() const
 }
 
 #endif // DOLPHIN_MAINWINDOW_H
-
