@@ -265,7 +265,14 @@ QMimeData* KFileItemModel::createMimeData(const KItemSet& indexes) const
         lastAddedItem = itemData;
         const KFileItem& item = itemData->item;
         if (!item.isNull()) {
-            urls << item.targetUrl();
+            //qDebug() << "ITEM DEBUG" << item.targetUrl() << item.url();
+            if (item.url().scheme() == "stash") {
+                qDebug() << "stash url" << item.url();
+                urls << item.url();
+            } else {
+                urls << item.targetUrl();
+            }
+            //urls << QUrl::fromLocalFile("/home/nic/msg");//item.targetUrl();
 
             bool isLocal;
             mostLocalUrls << item.mostLocalUrl(isLocal);
@@ -2324,4 +2331,3 @@ bool KFileItemModel::isConsistent() const
 
     return true;
 }
-
